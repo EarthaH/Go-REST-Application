@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -23,6 +24,8 @@ func HandleRequest() {
 	r.HandleFunc("/files/new/{filename}", makeFile)
 	r.HandleFunc("/files/replace/{oldname}/{newname}", renameFile)
 	r.HandleFunc("/files/delete/{filename}", deleteFile)
+	r.HandleFunc("/files/{filename}", readFile)
+	r.HandleFunc("/files/{filename}/save", writeFile)
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -70,10 +73,39 @@ func deleteFile(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: deleteFile")
 
 	vars := mux.Vars(r)
-
 	err := ls.DeleteFile(vars["filename"])
 
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func readFile(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: readFile")
+
+	vars := mux.Vars(r)
+	strlines, err := ls.ReadFile(vars["filename"])
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	jsonlines, _ := json.Marshal(strlines)
+
+	fmt.Println(string(jsonlines))
+}
+
+func writeFile(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint Hit: writeFile")
+
+	var lines []string
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	json.Unmarshal(body, &lines)
+
+	fmt.Println(lines)
 }
