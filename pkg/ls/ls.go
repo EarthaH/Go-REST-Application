@@ -1,6 +1,7 @@
 package ls
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -10,7 +11,7 @@ import (
 )
 
 // projectDirectory - for testing. TODO: remove/change for container
-var projectDirectory = "/Users/eartha/SideProjects/FileManager/Go-REST-Application"
+var projectDirectory = "./"
 var homeDirectory = filepath.Join(projectDirectory, "Icecream")
 
 func ListDirectory() ([]fs.FileInfo, error) {
@@ -65,4 +66,41 @@ func DeleteFile(fileName string) error {
 	err := os.Remove(filepath.Join(homeDirectory, fileName))
 
 	return err
+}
+
+func ReadFile(fileName string) ([]string, error) {
+	var txtlines []string
+	file, err := os.Open(fileName)
+
+	if err != nil {
+		return txtlines, err
+	}
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		txtlines = append(txtlines, scanner.Text())
+	}
+
+	file.Close()
+	return txtlines, nil
+}
+
+func WriteFile(fileName string, txtlines []string) error {
+	file, err := os.Open(fileName)
+
+	if err != nil {
+		return err
+	}
+
+	datawriter := bufio.NewWriter(file)
+
+	for _, data := range txtlines {
+		_, _ = datawriter.WriteString(data + "\n")
+	}
+
+	datawriter.Flush()
+	file.Close()
+	return nil
 }
