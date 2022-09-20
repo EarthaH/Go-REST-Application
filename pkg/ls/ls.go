@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	file "icecream.com/chocolate/pkg/dto"
 )
 
 // projectDirectory - for testing. TODO: remove/change for container
@@ -34,7 +36,7 @@ func CreatHomeDirectory() error {
 		}
 	}
 
-	fmt.Printf("Successfully created Home directory %s.", homeDirectory)
+	fmt.Printf("Successfully created Home directory %s.\n", homeDirectory)
 
 	return nil
 }
@@ -70,37 +72,39 @@ func DeleteFile(fileName string) error {
 
 func ReadFile(fileName string) ([]string, error) {
 	var txtlines []string
-	file, err := os.Open(fileName)
+	path := filepath.Join(homeDirectory, fileName)
+	txtfile, err := os.Open(path)
 
 	if err != nil {
 		return txtlines, err
 	}
 
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(txtfile)
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
 		txtlines = append(txtlines, scanner.Text())
 	}
 
-	file.Close()
+	txtfile.Close()
 	return txtlines, nil
 }
 
-func WriteFile(fileName string, txtlines []string) error {
-	file, err := os.Open(fileName)
+func WriteFile(fileName string, txtlines file.Line) error {
+	path := filepath.Join(homeDirectory, fileName)
+	txtfile, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	if err != nil {
 		return err
 	}
 
-	datawriter := bufio.NewWriter(file)
+	datawriter := bufio.NewWriter(txtfile)
 
 	for _, data := range txtlines {
-		_, _ = datawriter.WriteString(data + "\n")
+		_, _ = datawriter.WriteString(fmt.Sprintln(data.FileLine))
 	}
 
 	datawriter.Flush()
-	file.Close()
+	txtfile.Close()
 	return nil
 }

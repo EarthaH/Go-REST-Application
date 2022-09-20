@@ -40,7 +40,7 @@ func getFiles(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	files := file.ParseFiles(rawFiles)
+	files := file.ParseFileNames(rawFiles)
 
 	json.NewEncoder(w).Encode(files)
 }
@@ -98,7 +98,8 @@ func readFile(w http.ResponseWriter, r *http.Request) {
 func writeFile(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: writeFile")
 
-	var lines []string
+	var lines file.Line
+	vars := mux.Vars(r)
 	body, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
@@ -107,5 +108,5 @@ func writeFile(w http.ResponseWriter, r *http.Request) {
 
 	json.Unmarshal(body, &lines)
 
-	fmt.Println(lines)
+	ls.WriteFile(vars["filename"], lines)
 }

@@ -5,11 +5,14 @@ import (
 )
 
 type File struct {
-	FileName    string `json:"name"`
-	FileContent string `json:"content"`
+	FileName string `json:"name"`
 }
 
-func ParseFiles(rawFiles []fs.FileInfo) []File {
+type Line []struct {
+	FileLine string `json:"line"`
+}
+
+func ParseFileNames(rawFiles []fs.FileInfo) []File {
 	var files []File
 
 	for _, f := range rawFiles {
