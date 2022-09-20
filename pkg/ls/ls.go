@@ -26,7 +26,7 @@ func ListDirectory() ([]fs.FileInfo, error) {
 	return files, nil
 }
 
-func CreatHomeDirectory() error {
+func CreateHomeDirectory() error {
 	_, err := os.Stat(homeDirectory)
 
 	if os.IsNotExist(err) {
@@ -34,14 +34,14 @@ func CreatHomeDirectory() error {
 		if errDir != nil {
 			return errDir
 		}
-	}
 
-	fmt.Printf("Successfully created Home directory %s.\n", homeDirectory)
+		fmt.Printf("Successfully created Home directory %s.\n", homeDirectory)
+	}
 
 	return nil
 }
 
-func CreatFile(fileName string) error {
+func CreateFile(fileName string) error {
 	if homeDirectory == "" {
 		return errors.New("Home Directory not set")
 	}
