@@ -1,16 +1,16 @@
 package main
 
 import (
-	"log"
-
 	"icecream.com/chocolate/pkg/api"
+	"icecream.com/chocolate/pkg/logger"
 	"icecream.com/chocolate/pkg/ls"
 )
 
 func main() {
-	err := ls.CreatHomeDirectory()
+	logger.Init()
+	err := ls.CreateHomeDirectory()
 	if err != nil {
-		log.Fatalln(err)
+		logger.FatalError(err)
 	}
 
 	api.HandleRequest()

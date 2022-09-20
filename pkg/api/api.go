@@ -1,18 +1,17 @@
 package api
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	file "icecream.com/chocolate/pkg/dto"
+	"icecream.com/chocolate/pkg/logger"
 	"icecream.com/chocolate/pkg/ls"
 )
 
 func homePage(c *gin.Context) {
 	c.Writer.WriteString("Welcome to this Page.")
-	fmt.Println("Endpoint Hit: homePage")
+	logger.Info("Endpoint Hit: homePage")
 }
 
 func HandleRequest() {
@@ -25,18 +24,18 @@ func HandleRequest() {
 	r.GET("/files/:filename", readFile)
 	r.POST("/files/:filename/save", writeFile)
 
-	// http.Handle("/", r)
-	// log.Fatal(http.ListenAndServe(":8080", nil))
 	r.Run("localhost:8080")
 }
 
 func getFiles(c *gin.Context) {
-	fmt.Println("Endpoint Hit: getFiles")
+	logger.Info("Endpoint Hit: getFiles")
 
 	rawFiles, err := ls.ListDirectory()
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err)
+		c.JSON(http.StatusInternalServerError, "")
+		return
 	}
 
 	files := file.ParseFileNames(rawFiles)
@@ -45,19 +44,20 @@ func getFiles(c *gin.Context) {
 }
 
 func makeFile(c *gin.Context) {
-	fmt.Println("Endpoint Hit: makeFile")
+	logger.Info("Endpoint Hit: makeFile")
 
 	filename := c.Param("filename")
 
-	err := ls.CreatFile(filename)
+	err := ls.CreateFile(filename)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err)
+		c.JSON(http.StatusInternalServerError, "")
 	}
 }
 
 func renameFile(c *gin.Context) {
-	fmt.Println("Endpoint Hit: renameFile")
+	logger.Info("Endpoint Hit: renameFile")
 
 	oldname := c.Param("oldname")
 	newname := c.Param("newname")
@@ -65,43 +65,49 @@ func renameFile(c *gin.Context) {
 	err := ls.RenameFile(oldname, newname)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err)
+		c.JSON(http.StatusInternalServerError, "")
 	}
 }
 
 func deleteFile(c *gin.Context) {
-	fmt.Println("Endpoint Hit: deleteFile")
+	logger.Info("Endpoint Hit: deleteFile")
 
 	filename := c.Param("filename")
 	err := ls.DeleteFile(filename)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err)
+		c.JSON(http.StatusInternalServerError, "")
 	}
 }
 
 func readFile(c *gin.Context) {
-	fmt.Println("Endpoint Hit: readFile")
+	logger.Info("Endpoint Hit: readFile")
 
 	filename := c.Param("filename")
 	strlines, err := ls.ReadFile(filename)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err)
+		c.JSON(http.StatusInternalServerError, "")
+		return
 	}
 
 	c.IndentedJSON(http.StatusOK, strlines)
 }
 
 func writeFile(c *gin.Context) {
-	fmt.Println("Endpoint Hit: writeFile")
+	logger.Info("Endpoint Hit: writeFile")
 
 	var lines file.Line
 	filename := c.Param("filename")
 	err := c.BindJSON(&lines)
 
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err)
+		c.JSON(http.StatusInternalServerError, "")
+		return
 	}
 
 	ls.WriteFile(filename, lines)
