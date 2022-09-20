@@ -1,37 +1,36 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	file "icecream.com/chocolate/pkg/dto"
 	"icecream.com/chocolate/pkg/ls"
 )
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Welcome to the HomePage!")
+func homePage(c *gin.Context) {
+	c.Writer.WriteString("Welcome to this Page.")
 	fmt.Println("Endpoint Hit: homePage")
 }
 
 func HandleRequest() {
-	r := mux.NewRouter()
-	r.HandleFunc("/", homePage)
-	r.HandleFunc("/files/", getFiles)
-	r.HandleFunc("/files/new/{filename}", makeFile)
-	r.HandleFunc("/files/replace/{oldname}/{newname}", renameFile)
-	r.HandleFunc("/files/delete/{filename}", deleteFile)
-	r.HandleFunc("/files/{filename}", readFile)
-	r.HandleFunc("/files/{filename}/save", writeFile)
+	r := gin.Default()
+	r.GET("/", homePage)
+	r.GET("/files/", getFiles)
+	r.GET("/files/new/:filename", makeFile)
+	r.GET("/files/replace/:oldname/:newname", renameFile)
+	r.GET("/files/delete/:filename", deleteFile)
+	r.GET("/files/:filename", readFile)
+	r.POST("/files/:filename/save", writeFile)
 
-	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// http.Handle("/", r)
+	// log.Fatal(http.ListenAndServe(":8080", nil))
+	r.Run("localhost:8080")
 }
 
-func getFiles(w http.ResponseWriter, r *http.Request) {
+func getFiles(c *gin.Context) {
 	fmt.Println("Endpoint Hit: getFiles")
 
 	rawFiles, err := ls.ListDirectory()
@@ -42,71 +41,68 @@ func getFiles(w http.ResponseWriter, r *http.Request) {
 
 	files := file.ParseFileNames(rawFiles)
 
-	json.NewEncoder(w).Encode(files)
+	c.IndentedJSON(http.StatusOK, files)
 }
 
-func makeFile(w http.ResponseWriter, r *http.Request) {
+func makeFile(c *gin.Context) {
 	fmt.Println("Endpoint Hit: makeFile")
 
-	vars := mux.Vars(r)
+	filename := c.Param("filename")
 
-	err := ls.CreatFile(vars["filename"])
+	err := ls.CreatFile(filename)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func renameFile(w http.ResponseWriter, r *http.Request) {
+func renameFile(c *gin.Context) {
 	fmt.Println("Endpoint Hit: renameFile")
 
-	vars := mux.Vars(r)
+	oldname := c.Param("oldname")
+	newname := c.Param("newname")
 
-	err := ls.RenameFile(vars["oldname"], vars["newname"])
+	err := ls.RenameFile(oldname, newname)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func deleteFile(w http.ResponseWriter, r *http.Request) {
+func deleteFile(c *gin.Context) {
 	fmt.Println("Endpoint Hit: deleteFile")
 
-	vars := mux.Vars(r)
-	err := ls.DeleteFile(vars["filename"])
+	filename := c.Param("filename")
+	err := ls.DeleteFile(filename)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func readFile(w http.ResponseWriter, r *http.Request) {
+func readFile(c *gin.Context) {
 	fmt.Println("Endpoint Hit: readFile")
 
-	vars := mux.Vars(r)
-	strlines, err := ls.ReadFile(vars["filename"])
+	filename := c.Param("filename")
+	strlines, err := ls.ReadFile(filename)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	jsonlines, _ := json.Marshal(strlines)
-
-	fmt.Println(string(jsonlines))
+	c.IndentedJSON(http.StatusOK, strlines)
 }
 
-func writeFile(w http.ResponseWriter, r *http.Request) {
+func writeFile(c *gin.Context) {
 	fmt.Println("Endpoint Hit: writeFile")
 
 	var lines file.Line
-	vars := mux.Vars(r)
-	body, err := ioutil.ReadAll(r.Body)
+	filename := c.Param("filename")
+	err := c.BindJSON(&lines)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	json.Unmarshal(body, &lines)
-
-	ls.WriteFile(vars["filename"], lines)
+	ls.WriteFile(filename, lines)
 }
