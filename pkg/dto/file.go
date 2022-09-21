@@ -2,25 +2,22 @@ package file
 
 import (
 	"io/fs"
-	"time"
 )
 
 type File struct {
-	FileName    string      `json:"name"`
-	FileSize    int64       `json:"size"`
-	Mode        fs.FileMode `json:"mode"`
-	FileModTime time.Time   `json:"time"`
-	FileType    bool        `json:"directory"`
+	FileName string `json:"name"`
 }
 
-var files []File
+type Line []struct {
+	FileLine string `json:"line"`
+}
 
-func SetFiles(rawFiles []fs.FileInfo) {
+func ParseFileNames(rawFiles []fs.FileInfo) []File {
+	var files []File
+
 	for _, f := range rawFiles {
-		files = append(files, File{FileName: f.Name(), FileSize: f.Size(), Mode: f.Mode(), FileModTime: f.ModTime(), FileType: f.IsDir()})
+		files = append(files, File{FileName: f.Name()})
 	}
-}
 
-func GetFiles() []File {
 	return files
 }
