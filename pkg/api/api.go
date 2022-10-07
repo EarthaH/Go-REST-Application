@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,14 +18,21 @@ func homePage(c *gin.Context) {
 func HandleRequest() {
 	r := gin.Default()
 	r.GET("/", homePage)
+	r.GET("/health", healthCheck)
 	r.GET("/files/", getFiles)
 	r.GET("/files/new/:filename", makeFile)
-	r.GET("/files/replace/:oldname/:newname", renameFile)
-	r.GET("/files/delete/:filename", deleteFile)
+	r.PUT("/files/replace/:oldname/:newname", renameFile)
+	r.DELETE("/files/delete/:filename", deleteFile)
 	r.GET("/files/:filename", readFile)
 	r.POST("/files/:filename/save", writeFile)
 
-	r.Run("localhost:8080")
+	r.Run("0.0.0.0:8080")
+}
+
+func healthCheck(c *gin.Context) {
+	logger.Info("Endpoint Hit: healthCheck")
+
+	c.IndentedJSON(http.StatusOK, "Healthy")
 }
 
 func getFiles(c *gin.Context) {
@@ -52,7 +60,9 @@ func makeFile(c *gin.Context) {
 
 	if err != nil {
 		logger.Error(err)
-		c.JSON(http.StatusInternalServerError, "")
+		c.JSON(http.StatusInternalServerError, fmt.Sprintf("File \"%s\" NOT created.", filename))
+	} else {
+		c.JSON(http.StatusCreated, fmt.Sprintf("New file \"%s\" created.", filename))
 	}
 }
 
@@ -66,7 +76,9 @@ func renameFile(c *gin.Context) {
 
 	if err != nil {
 		logger.Error(err)
-		c.JSON(http.StatusInternalServerError, "")
+		c.JSON(http.StatusInternalServerError, fmt.Sprintf("File \"%s\" NOT renamed to \"%s\".", oldname, newname))
+	} else {
+		c.JSON(http.StatusOK, fmt.Sprintf("File \"%s\" renamed to \"%s\".", oldname, newname))
 	}
 }
 
@@ -78,7 +90,9 @@ func deleteFile(c *gin.Context) {
 
 	if err != nil {
 		logger.Error(err)
-		c.JSON(http.StatusInternalServerError, "")
+		c.JSON(http.StatusInternalServerError, fmt.Sprintf("File \"%s\" NOT deleted.", filename))
+	} else {
+		c.JSON(http.StatusOK, fmt.Sprintf("File \"%s\" deleted.", filename))
 	}
 }
 
@@ -91,10 +105,9 @@ func readFile(c *gin.Context) {
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, "")
-		return
+	} else {
+		c.IndentedJSON(http.StatusOK, strlines)
 	}
-
-	c.IndentedJSON(http.StatusOK, strlines)
 }
 
 func writeFile(c *gin.Context) {
@@ -107,8 +120,8 @@ func writeFile(c *gin.Context) {
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, "")
-		return
+	} else {
+		ls.WriteFile(filename, lines)
+		c.JSON(http.StatusCreated, fmt.Sprintf("Saved content to file \"%s\".", filename))
 	}
-
-	ls.WriteFile(filename, lines)
 }
